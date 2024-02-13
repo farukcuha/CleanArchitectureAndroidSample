@@ -15,26 +15,20 @@ class NotesRepositoryImpl(
     override suspend fun getNotes(): Result<List<Note>?> {
         return performHttpRequest(
             process = { notesService.getNotes() },
-            transform = {
-                it?.toDomainModel()
-            }
+            transform = { it?.toDomainModel() }
         )
     }
 
     override suspend fun insertNote(params: InsertNoteUseCase.Params): Result<Unit> {
         return performHttpRequest(
-            process = {
-                notesService.insertNote(InsertNoteRequest(title = params.title))
-            },
+            process = { notesService.insertNote(InsertNoteRequest(title = params.title)) },
             transform = {}
         )
     }
 
     override suspend fun deleteNote(params: DeleteNoteUseCase.Params): Result<Unit> {
         return performHttpRequest(
-            process = { notesService.deleteNote(
-                params.noteId
-            )},
+            process = { notesService.deleteNote(params.noteId)},
             transform = {}
         )
     }

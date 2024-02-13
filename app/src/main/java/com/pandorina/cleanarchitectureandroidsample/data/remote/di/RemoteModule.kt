@@ -1,6 +1,7 @@
 package com.pandorina.cleanarchitectureandroidsample.data.remote.di
 
 import com.google.gson.GsonBuilder
+import com.pandorina.cleanarchitectureandroidsample.BuildConfig
 import com.pandorina.cleanarchitectureandroidsample.data.remote.NotesService
 import dagger.Module
 import dagger.Provides
@@ -15,16 +16,11 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 class RemoteModule {
 
-    companion object {
-
-        const val API_BASE_URL = "https://notes-api-cz2h.onrender.com/"
-    }
-
     @Provides
     @Singleton
     fun provideNotesService(): NotesService {
         return Retrofit.Builder()
-            .baseUrl(API_BASE_URL)
+            .baseUrl(BuildConfig.API_URL)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
             .create(NotesService::class.java)

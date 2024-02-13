@@ -1,23 +1,20 @@
 package com.pandorina.cleanarchitectureandroidsample.ui.core
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import timber.log.Timber
 
-abstract class BaseViewModel<T: UiState, E: UiEvent>(uiState: T): ViewModel() {
+abstract class StatefulViewModel<T: UiState, E: UiEvent>(uiState: T): ViewModel() {
     private val _uiState: MutableStateFlow<T> = MutableStateFlow(uiState)
     val uiState = _uiState.asStateFlow()
 
-    init {
-        observeErrors()
-    }
+    init { observeErrors() }
 
     abstract fun onTriggerEvent(eventType: E)
 
@@ -26,11 +23,13 @@ abstract class BaseViewModel<T: UiState, E: UiEvent>(uiState: T): ViewModel() {
     }
 
     private fun logError(exception: Throwable?) {
-        Timber.tag(this::class.java.simpleName).e(exception)
+        Log.e(this::class.java.simpleName, exception?.localizedMessage ?: "Unknown error")
     }
 
     private fun observeErrors() = safeLaunch {
-        _uiState.collectLatest { logError(it.error) }
+        _uiState.collect {
+            logError(it.error)
+        }
     }
 
     protected fun safeLaunch(block: suspend CoroutineScope.() -> Unit) {

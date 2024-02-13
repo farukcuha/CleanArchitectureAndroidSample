@@ -4,7 +4,7 @@ import com.pandorina.cleanarchitectureandroidsample.domain.use_case.ClearNotesUs
 import com.pandorina.cleanarchitectureandroidsample.domain.use_case.DeleteNoteUseCase
 import com.pandorina.cleanarchitectureandroidsample.domain.use_case.GetNotesUseCase
 import com.pandorina.cleanarchitectureandroidsample.domain.use_case.InsertNoteUseCase
-import com.pandorina.cleanarchitectureandroidsample.ui.core.BaseViewModel
+import com.pandorina.cleanarchitectureandroidsample.ui.core.StatefulViewModel
 import com.pandorina.cleanarchitectureandroidsample.ui.core.ViewState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -15,7 +15,7 @@ class NotesViewModel @Inject constructor(
     private val insertNoteUseCase: InsertNoteUseCase,
     private val deleteNoteUseCase: DeleteNoteUseCase,
     private val clearNotesUseCase: ClearNotesUseCase,
-): BaseViewModel<NotesUiState, NotesUiEvent>(NotesUiState()) {
+): StatefulViewModel<NotesUiState, NotesUiEvent>(NotesUiState()) {
 
     override fun onTriggerEvent(eventType: NotesUiEvent) {
         when(eventType) {

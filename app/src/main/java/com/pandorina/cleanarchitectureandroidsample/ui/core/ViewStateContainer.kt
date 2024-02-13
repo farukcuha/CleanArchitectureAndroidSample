@@ -20,54 +20,18 @@ import kotlinx.coroutines.launch
 @Composable
 inline fun <reified T> ViewStateContainer(
     modifier: Modifier = Modifier,
-    viewState: ViewState<T>,
+    viewState: ViewState<T> = ViewState.Idle,
     loadingView: @Composable () -> Unit = {},
     contentView: @Composable (data: T?) -> Unit = {}
 ) {
-
     Box(
         modifier = modifier,
         contentAlignment = Alignment.Center
     ) {
         when(viewState) {
-            is ViewState.Loading -> {
-                loadingView()
-            }
-            is ViewState.Success -> {
-                contentView(viewState.data)
-            }
-            is ViewState.Idle -> {
-                contentView(null)
-            }
-            else -> {
-                contentView(null)
-            }
-        }
-    }
-}
-
-@Composable
-fun SnackBar(
-    modifier: Modifier = Modifier,
-    message: String,
-    show: Boolean,
-    showSnackBar: (Boolean) -> Unit
-) {
-    val snackState = remember { SnackbarHostState() }
-    val snackScope = rememberCoroutineScope()
-
-    SnackbarHost(
-        modifier = modifier,
-        hostState = snackState
-    ){
-        Snackbar(
-            snackbarData = it
-        )
-    }
-    if (show){
-        LaunchedEffect(Unit) {
-            snackScope.launch { snackState.showSnackbar(message) }
-            showSnackBar(false)
+            is ViewState.Loading -> { loadingView() }
+            is ViewState.Success -> { contentView(viewState.data) }
+            else -> { contentView(null) }
         }
     }
 }

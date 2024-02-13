@@ -14,7 +14,10 @@ suspend inline fun <reified K, T> performHttpRequest(
                 val domainData = transform(body)
                 Result.success(domainData)
             }
-            else -> Result.failure(Exception("HTTP error code: ${response.code()}"))
+            else -> {
+                val errorBody = response.errorBody()?.string()
+                Result.failure(Exception("${response.code()} - $errorBody"))
+            }
         }
     } catch (e: Exception) {
         Result.failure(e)
