@@ -1,6 +1,7 @@
 
-## Package Structure
+# Clean Architecture - Kotlin - Android
 Clean Architecture is a design pattern that separates the concerns of an application into distinct layers, making the code more modular, testable, and maintainable. This article will explore the implementation of Clean Architecture in an Android application using Kotlin, focusing on the flow from service to screen.
+## Package Structure
 
 ```
 com
@@ -130,6 +131,12 @@ data class GetNotesResponse(
         }
     }
 }
+```
+
+```kotlin
+data class InsertNoteRequest(
+    val title: String?
+)
 ```
 
 The `NotesRepository` interface defines the functions for the repository layer. It includes functions to get notes and insert a note.
@@ -298,23 +305,31 @@ class UseCaseModule {
 
 This module is installed in the `SingletonComponent` to ensure that there is only one instance of each use case throughout the application. This is important to prevent multiple instances of the use cases from being created, which could lead to issues such as inconsistent data. The `provide...UseCase` methods use the `NotesRepository` to create the use case instances. These use cases will be used to handle all the business logic in the application.
 
+Sure, I can help you fill in the sections. Here's a possible way to complete the sections:
+
 ## UI Layer
-```
+The UI layer is responsible for rendering the user interface and handling user interactions. It communicates with the ViewModel to get the necessary data and updates the UI accordingly.
+
+```kotlin
 ├── notes
-│     ├── NotesScreen
-│     ├── NotesViewModel
-│     ├── NotesUiState
-│     ├── NotesUiEvent
-│     └── NotesNavigation
+│     ├── NotesScreen // This is the main screen that displays the list of notes.
+│     ├── NotesViewModel // This is the ViewModel that manages the state of the NotesScreen.
+│     ├── NotesUiState // This represents the different states the NotesScreen can be in.
+│     ├── NotesUiEvent // These are the different events that can trigger state changes.
+│     └── NotesNavigation // This handles navigation for the NotesScreen.
 ```
+
+The `NavigationCommand` interface defines the contract for navigation commands. Each navigation command will have a list of arguments and a destination.
+
 ```kotlin
 interface NavigationCommand {
-
     val arguments: List<NamedNavArgument>
-
     val destination: String
 }
 ```
+
+The `NotesNavigation` object is a concrete implementation of the `NavigationCommand` interface for the notes screen.
+
 ```kotlin
 object NotesNavigation: NavigationCommand {
     override val arguments: List<NamedNavArgument>
@@ -323,6 +338,9 @@ object NotesNavigation: NavigationCommand {
         get() = "notes_screen"
 }
 ```
+
+The `AppRoot` function is a composable function that sets up the navigation for the application.
+
 ```kotlin
 @Composable
 fun AppRoot() {
@@ -337,6 +355,9 @@ fun AppRoot() {
     }
 }
 ```
+
+The `UiState` and `UiEvent` interfaces define the contract for UI states and events.
+
 ```kotlin
 interface UiState {  
     val error: Throwable?  
@@ -344,6 +365,8 @@ interface UiState {
 
 interface UiEvent
 ```
+
+The `StatefulViewModel` abstract class is a base class for ViewModels that have a state. It provides functionality for updating the state and handling errors.
 
 ```kotlin
 abstract class StatefulViewModel<T: UiState, E: UiEvent>(uiState: T): ViewModel() {
@@ -376,6 +399,8 @@ abstract class StatefulViewModel<T: UiState, E: UiEvent>(uiState: T): ViewModel(
 }
 ```
 
+The `ViewState` sealed class represents the different states a view can be in.
+
 ```kotlin
 sealed class ViewState<out T> {  
     object Idle : ViewState<Nothing>()  
@@ -384,6 +409,8 @@ sealed class ViewState<out T> {
     data class Error(val error: Throwable? = null) : ViewState<Nothing>()  
 }
 ```
+
+The `NotesUiEvent` sealed class represents the different events that can occur in the notes screen. The `NotesUiState` data class represents the different states the notes screen can be in.
 
 ```kotlin
 sealed class NotesUiEvent: UiEvent {
@@ -409,6 +436,9 @@ data class NotesUiState(
     }
 }
 ```
+Sure, here's a possible way to complete the sections:
+
+The `NotesViewModel` class is a ViewModel for the notes screen. It handles the different events that can occur and updates the state accordingly. It uses different use cases to perform actions like getting notes, inserting a note, deleting a note, and clearing notes.
 
 ```kotlin
 @HiltViewModel
@@ -484,6 +514,8 @@ class NotesViewModel @Inject constructor(
 }
 ```
 
+The `ViewStateContainer` composable function is a container that displays different views based on the current view state. It can display a loading view, a content view, or a default view.
+
 ```kotlin
 @Composable
 inline fun <reified T> ViewStateContainer(
@@ -504,6 +536,9 @@ inline fun <reified T> ViewStateContainer(
     }
 }
 ```
+Sure, let's break down the code and provide explanations for each section.
+
+The `NotesScreen` is a composable function that sets up the notes screen. It creates an instance of `NotesViewModel`, collects the UI state, and handles errors. It also triggers the `GetNotes` event when the screen is launched.
 
 ```kotlin
 @Composable
@@ -511,35 +546,30 @@ fun NotesScreen(navController: NavHostController) {
     val viewModel: NotesViewModel = hiltViewModel()
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
-
     LaunchedEffect(uiState.error) {
         if (uiState.error != null) {
             context.showToast(uiState.error?.localizedMessage ?: "An error occurred")
         }
     }
-
     LaunchedEffect(Unit) {
         viewModel.onTriggerEvent(NotesUiEvent.GetNotes)
     }
-
     NotesScreenContent(
         notesViewState = uiState.notesViewState,
         insertNoteViewState = uiState.insertNoteViewState,
         clearNotesViewState = uiState.clearNotesViewState,
-        onClickDeleteNote = {
-            viewModel.onTriggerEvent(NotesUiEvent.DeleteNote(it))
-        },
-        onClickClearNotes = {
-            viewModel.onTriggerEvent(NotesUiEvent.ClearNotes)
-        },
+        onClickDeleteNote = { viewModel.onTriggerEvent(NotesUiEvent.DeleteNote(it)) },
+        onClickClearNotes = { viewModel.onTriggerEvent(NotesUiEvent.ClearNotes) },
         title = uiState.inputText,
         onTitleChanged = { viewModel.onTriggerEvent(NotesUiEvent.UpdateInputText(it)) },
-        onClickSend = {
-            viewModel.onTriggerEvent(NotesUiEvent.InsertNote)
-        }
+        onClickSend = { viewModel.onTriggerEvent(NotesUiEvent.InsertNote) }
     )
 }
+```
 
+The `NotesScreenContent` is another composable function that displays the content of the notes screen. It shows a list of notes and provides functionality for deleting notes, clearing notes, and inserting new notes.
+
+```kotlin
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NotesScreenContent(
@@ -555,20 +585,14 @@ fun NotesScreenContent(
     val focusManager = LocalFocusManager.current
     Scaffold(
         topBar = {
-            Surface(
-                shadowElevation = 8.dp
-            ) {
+            Surface(shadowElevation = 8.dp) {
                 TopAppBar(
                     title = { Text(text = "Notes") },
                     actions = {
                         ViewStateContainer(
                             viewState = clearNotesViewState,
                             loadingView = { CircularProgressIndicator() },
-                            contentView = {
-                                Button(onClick = onClickClearNotes) {
-                                    Text(text = "Clear")
-                                }
-                            }
+                            contentView = { Button(onClick = onClickClearNotes) { Text(text = "Clear") } }
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                     }
@@ -576,58 +600,32 @@ fun NotesScreenContent(
             }
         }
     ) {
-        Column(
-            modifier = Modifier.padding(it)
-        ) {
+        Column(modifier = Modifier.padding(it)) {
             ViewStateContainer(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .weight(1.0f),
+                modifier = Modifier.fillMaxSize().weight(1.0f),
                 viewState = notesViewState,
                 loadingView = { CircularProgressIndicator() },
                 contentView = { notes ->
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = 8.dp)
-                    ) {
-                        item {
-                            Spacer(modifier = Modifier.height(8.dp))
-                        }
+                    LazyColumn(modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp)) {
+                        item { Spacer(modifier = Modifier.height(8.dp)) }
                         items(notes?.size ?: 0) { index ->
-                            NoteView(note = notes?.get(index)) { noteId ->
-                                onClickDeleteNote(noteId)
-                            }
+                            NoteView(note = notes?.get(index)) { noteId -> onClickDeleteNote(noteId) }
                             Spacer(modifier = Modifier.height(8.dp))
                         }
                     }
                 }
             )
             Row(
-                modifier = Modifier
-                    .align(Alignment.End)
-                    .padding(horizontal = 8.dp)
-                    .padding(bottom = 8.dp),
+                modifier = Modifier.align(Alignment.End).padding(horizontal = 8.dp).padding(bottom = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                TextField(
-                    value = title,
-                    onValueChange = onTitleChanged,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(0.85f)
-                )
+                TextField(value = title, onValueChange = onTitleChanged, modifier = Modifier.fillMaxWidth().weight(0.85f))
                 ViewStateContainer(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(0.15f),
+                    modifier = Modifier.fillMaxWidth().weight(0.15f),
                     viewState = insertNoteViewState,
                     loadingView = { CircularProgressIndicator() },
                     contentView = {
-                        IconButton(onClick = {
-                            onClickSend()
-                            focusManager.clearFocus()
-                        }) {
+                        IconButton(onClick = { onClickSend(); focusManager.clearFocus() }) {
                             Icon(imageVector = Icons.Default.Send, contentDescription = "send")
                         }
                     }
@@ -636,13 +634,17 @@ fun NotesScreenContent(
         }
     }
 }
+```
 
+Finally, the `NotesScreenContentPreview` function is used to preview the `NotesScreenContent` in both light and dark modes.
+
+```kotlin
 @Composable
-@Preview(showBackground = true, name = "Light Mode")
-@Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES, name = "Dark Mode")
+@Preview(showBackground = true, name = "LightMode")
+@Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES, name = "DarkMode")
 fun NotesScreenContentPreview() {
     CleanArchitectureAndroidSampleTheme {
-         NotesScreenContent()
+        NotesScreenContent()
     }
 }
 ```
