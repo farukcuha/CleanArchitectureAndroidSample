@@ -25,7 +25,7 @@ com
         │   └── usecase (Interactors)
         ├── ui
         │   ├── core (interfaces, wrappers and base classes)
-        │   ├── screens ()
+        │   ├── screens
         └   └── theme (typefaces, theme, colors)
 ```
 The package structure is organized according to the Clean Architecture layers. Each package has a specific role in the application:
