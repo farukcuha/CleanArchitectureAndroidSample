@@ -1,6 +1,8 @@
 
 # Clean Architecture - Kotlin - Android
-Clean Architecture is a design pattern that separates the concerns of an application into distinct layers, making the code more modular, testable, and maintainable. This article will explore the implementation of Clean Architecture in an Android application using Kotlin, focusing on the flow from service to screen.
+[Project Link](https://github.com/farukcuha/CleanArchitectureAndroidSample)
+
+Clean Architecture is a design pattern that separates the concerns of an application into distinct layers, making the code more modular, testable, and maintainable. This article will explore the implementation of Clean Architecture in an Android application using Kotlin, focusing on the flow from service to screen. 
 ## Package Structure
 
 ```
@@ -79,7 +81,7 @@ class RemoteModule {
 The `RemoteModule` is installed in the `SingletonComponent` to ensure that there is only one instance of `NotesService` throughout the application. This is important to prevent multiple instances of the service from being created, which could lead to issues such as inconsistent data or unnecessary network requests. The `provideNotesService` method uses the Retrofit builder to create the `NotesService` instance. The base URL for the API is retrieved from the `BuildConfig`, and the Gson converter factory is added to handle the conversion of JSON data to Kotlin objects. Finally, the `NotesService` class is created from the Retrofit instance. This service will be used to make all the network requests in the application. 
 
 ## Repository Layer
-The repository layer is responsible for handling data operations in the application. It uses the `Result<T>` class from Kotlin to represent the result of these operations.
+The repository layer is responsible for handling data operations in the application. It uses the `Result<T>` class from Kotlin to represent the result of these operations. [Click to see the Result<T> class reference](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-result/)
 
 ```kotlin
 suspend inline fun <reified K, T> performHttpRequest(
