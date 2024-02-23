@@ -14,23 +14,19 @@ com
         │   │   ├── entity (Entities for Room database)
         │   │   ├── request (Request objects for data operations)
         │   │   ├── response (Response objects from data operations)
-        │   │   └── dto (Data Transfer Objects for mapping between layers)
+        │   │   └── network_dto (Network Data Transfer Objects for mapping between layers)
         │   ├── remote
         │   │   └── api (Retrofit interfaces)
         │   └── repository (Repository interfaces)
         ├── domain
+        │   ├── core (interfaces and base classes)
         │   ├── model (Domain models)
         │   ├── repository (Repository interfaces)
         │   └── usecase (Interactors)
-        ├── presentation
-        │   ├── di (Dependency Injection)
-        │   ├── model (UI models)
-        │   ├── ui
-        │   │   ├── adapters (Adapters for RecyclerView)
-        │   │   ├── fragments (UI fragments)
-        │   │   └── viewmodels (ViewModels)
-        │   └── util (Utility classes for UI)
-        └── utils (Utility classes)
+        ├── ui
+        │   ├── core (interfaces, wrappers and base classes)
+        │   ├── screens ()
+        └   └── theme (typefaces, theme, colors)
 ```
 
 
