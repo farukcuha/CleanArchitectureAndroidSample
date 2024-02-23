@@ -33,17 +33,6 @@ com
 
 ## Service Layer
 ```kotlin
-package com.pandorina.cleanarchitectureandroidsample.data.remote
-
-import com.pandorina.cleanarchitectureandroidsample.data.model.request.InsertNoteRequest
-import com.pandorina.cleanarchitectureandroidsample.data.model.response.GetNotesResponse
-import retrofit2.Response
-import retrofit2.http.Body
-import retrofit2.http.DELETE
-import retrofit2.http.GET
-import retrofit2.http.POST
-import retrofit2.http.Path
-
 interface NotesService {
     @GET("notes")
     suspend fun getNotes(): Response<GetNotesResponse?>
@@ -62,12 +51,118 @@ interface NotesService {
     suspend fun clearNotes(): Response<String>
 }
 ```
+// Write here
+```kotlin
+@Module
+@InstallIn(SingletonComponent::class)
+class RemoteModule {
 
-
-The service layer is responsible for handling network requests and interacting with remote data sources. In this example, we have a  `NotesService`  interface that defines methods for fetching, inserting, deleting, and clearing notes. These methods are annotated with Retrofit annotations to specify HTTP methods and endpoints.
+    @Provides
+    @Singleton
+    fun provideNotesService(): NotesService {
+        return Retrofit.Builder()
+            .baseUrl(BuildConfig.API_URL)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(NotesService::class.java)
+    }
+}
+```
 
 ## Repository Layer
+```kotlin
+suspend inline fun <reified K, T> performHttpRequest(
+    crossinline process: suspend () -> Response<T>,
+    transform: (T?) -> K
+): Result<K> {
+    return try {
+        val response = process()
+        when {
+            response.isSuccessful -> {
+                val body = response.body()
+                val domainData = transform(body)
+                Result.success(domainData)
+            }
+            else -> {
+                val errorBody = response.errorBody()?.string()
+                Result.failure(Exception("${response.code()} - $errorBody"))
+            }
+        }
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+}
+```
+// mention kotlin Result<T> class
 
+```kotlin
+interface ApiResponse<T> {
+    fun toDomainModel(): T?
+}
+```
+
+```kotlin
+data class GetNotesResponse(
+    val size: Int?,
+    val data: List<NoteDto>?
+): ApiResponse<List<Note>> {
+    override fun toDomainModel(): List<Note>? {
+        return data?.map {
+            Note(
+                id = it._id,
+                title = it.title,
+                time = it.createdTime
+            )
+        }
+    }
+}
+```
+
+```kotlin
+interface NotesRepository {
+    suspend fun getNotes(): Result<List<Note>?>
+
+    suspend fun insertNote(
+        params: InsertNoteUseCase.Params
+    ): Result<Unit>
+}
+```
+
+```kotlin
+class NotesRepositoryImpl(
+    private val notesService: NotesService
+): NotesRepository {
+
+    override suspend fun getNotes(): Result<List<Note>?> {
+        return performHttpRequest(
+            process = { notesService.getNotes() },
+            transform = { it?.toDomainModel() }
+        )
+    }
+
+    override suspend fun insertNote(params: InsertNoteUseCase.Params): Result<Unit> {
+        return performHttpRequest(
+            process = { notesService.insertNote(InsertNoteRequest(title = params.title))},
+            transform = {}
+        )
+    }
+}
+```
+
+```kotlin
+@Module
+@InstallIn(SingletonComponent::class)
+class RepositoryModule {
+
+    @Provides
+    @Singleton
+    fun provideNotesRepository(
+        notesService: NotesService
+    ): NotesRepository {
+        return NotesRepositoryImpl(notesService)
+    }
+}
+```
 ## Use Case Layer
 
 ## Use Case Layer
