@@ -1,10 +1,7 @@
 
-# Clean Architecture in Android with Kotlin
-
+## Package Structure
 Clean Architecture is a design pattern that separates the concerns of an application into distinct layers, making the code more modular, testable, and maintainable. This article will explore the implementation of Clean Architecture in an Android application using Kotlin, focusing on the flow from service to screen.
 
-## Package Structure
-// Write here
 ```
 com
 └── yourcompany
@@ -30,11 +27,15 @@ com
         │   ├── screens ()
         └   └── theme (typefaces, theme, colors)
 ```
+The package structure is organized according to the Clean Architecture layers. Each package has a specific role in the application:
 
-
+- `data`: This package contains all the data-related classes. It includes the Room database interfaces (`dao`), the entities for the Room database (`entity`), the request and response objects for data operations (`request` and `response`), and the network data transfer objects for mapping between layers (`network_dto`). The `remote` package contains the Retrofit interfaces (`api`), and the `repository` package contains the repository interfaces.
+- `domain`: This package contains the core business logic of the application. It includes interfaces and base classes (`core`), domain models (`model`), repository interfaces (`repository`), and use cases or interactors (`usecase`).
+- `ui`: This package contains all the UI-related classes. It includes interfaces, wrappers, and base classes (`core`), the different screens of the application (`screens`), and the theme-related classes (`theme`).
 
 ## Service Layer
-// Write here
+The service layer is responsible for making network requests. It includes a `NotesService` interface with methods to get notes, insert a note, delete a note, and clear notes.
+
 ```kotlin
 interface NotesService {
     @GET("notes")
@@ -54,7 +55,9 @@ interface NotesService {
     suspend fun clearNotes(): Response<String>
 }
 ```
-// Write here
+
+The `NotesService` interface is provided as a singleton in the `RemoteModule` class. This class uses the Retrofit library to create an instance of `NotesService`.
+
 ```kotlin
 @Module
 @InstallIn(SingletonComponent::class)
@@ -71,9 +74,12 @@ class RemoteModule {
     }
 }
 ```
-// Write here
+
+The `RemoteModule` is installed in the `SingletonComponent` to ensure that there is only one instance of `NotesService` throughout the application. This is important to prevent multiple instances of the service from being created, which could lead to issues such as inconsistent data or unnecessary network requests. The `provideNotesService` method uses the Retrofit builder to create the `NotesService` instance. The base URL for the API is retrieved from the `BuildConfig`, and the Gson converter factory is added to handle the conversion of JSON data to Kotlin objects. Finally, the `NotesService` class is created from the Retrofit instance. This service will be used to make all the network requests in the application. 
+
 ## Repository Layer
-// Write here
+The repository layer is responsible for handling data operations in the application. It uses the `Result<T>` class from Kotlin to represent the result of these operations.
+
 ```kotlin
 suspend inline fun <reified K, T> performHttpRequest(
     crossinline process: suspend () -> Response<T>,
@@ -97,13 +103,17 @@ suspend inline fun <reified K, T> performHttpRequest(
     }
 }
 ```
-// mention kotlin Result<T> class
+This function `performHttpRequest` is a generic function that performs a network request and transforms the response into a domain model. It takes two parameters: `process`, a suspend function that performs the network request and returns a `Response<T>`, and `transform`, a function that transforms the response body into a domain model of type `K`. The function returns a `Result<K>`.
+
+The `ApiResponse<T>` interface represents a response from the API. It has a single function `toDomainModel()` that transforms the response into a domain model.
 
 ```kotlin
 interface ApiResponse<T> {
     fun toDomainModel(): T?
 }
 ```
+
+The `GetNotesResponse` data class represents the response from the `getNotes` API call. It implements the `ApiResponse<List<Note>>` interface and overrides the `toDomainModel()` function to transform the response into a list of `Note` domain models.
 
 ```kotlin
 data class GetNotesResponse(
@@ -121,7 +131,8 @@ data class GetNotesResponse(
     }
 }
 ```
-// Write here
+
+The `NotesRepository` interface defines the functions for the repository layer. It includes functions to get notes and insert a note.
 
 ```kotlin
 interface NotesRepository {
@@ -132,6 +143,8 @@ interface NotesRepository {
     ): Result<Unit>
 }
 ```
+
+The `NotesRepositoryImpl` class implements the `NotesRepository` interface. It uses the `NotesService` to perform the network requests and the `performHttpRequest` function to handle the responses.
 
 ```kotlin
 class NotesRepositoryImpl(
@@ -153,7 +166,8 @@ class NotesRepositoryImpl(
     }
 }
 ```
-// Write here
+
+The `RepositoryModule` class provides the `NotesRepository` as a singleton. It uses the `NotesService` to create an instance of `NotesRepositoryImpl`.
 
 ```kotlin
 @Module
@@ -169,16 +183,19 @@ class RepositoryModule {
     }
 }
 ```
-// Write here
+
+This module is installed in the `SingletonComponent` to ensure that there is only one instance of `NotesRepository` throughout the application. This is important to prevent multiple instances of the repository from being created, which could lead to issues such as inconsistent data. The `provideNotesRepository` method uses the `NotesService` to create the `NotesRepositoryImpl` instance. This repository will be used to handle all the data operations in the application. 
 
 ## Use Case Layer
-// Write here
+The use case layer is responsible for executing business logic in a use case scenario. The `BaseUseCase` interface is a generic interface that represents a use case with input parameters `P` and output results `T`.
+
 ```kotlin
 interface BaseUseCase<P, T> {
     suspend operator fun invoke(params: P): Result<T>
 }
 ```
-// Write here
+
+The `GetNotesUseCase` class implements the `BaseUseCase` interface and overrides the `invoke` function to get notes from the repository.
 
 ```kotlin
 class GetNotesUseCase(
@@ -190,7 +207,8 @@ class GetNotesUseCase(
     }
 }
 ```
-// Write here
+
+The `InsertNoteUseCase` class implements the `BaseUseCase` interface and overrides the `invoke` function to insert a note into the repository.
 
 ```kotlin
 class InsertNoteUseCase(
@@ -206,7 +224,38 @@ class InsertNoteUseCase(
     }
 }
 ```
-// Write here
+
+The `DeleteNoteUseCase` class implements the `BaseUseCase` interface and overrides the `invoke` function to delete a note from the repository.
+
+```kotlin
+class DeleteNoteUseCase(
+    private val repository: NotesRepository
+) : BaseUseCase<DeleteNoteUseCase.Params, Unit> {
+
+    data class Params(
+        val noteId: String?
+    )
+
+    override suspend fun invoke(params: Params): Result<Unit> {
+        return repository.deleteNote(params)
+    }
+}
+```
+
+The `ClearNotesUseCase` class implements the `BaseUseCase` interface and overrides the `invoke` function to clear all notes from the repository.
+
+```kotlin
+class ClearNotesUseCase(
+    private val repository: NotesRepository
+): BaseUseCase<Unit, Unit> {
+
+    override suspend fun invoke(params: Unit): Result<Unit> {
+        return repository.clearNotes()
+    }
+}
+```
+
+The `UseCaseModule` class provides the use cases as singletons. It uses the `NotesRepository` to create instances of the use cases.
 
 ```kotlin
 @Module
@@ -228,9 +277,26 @@ class UseCaseModule {
     ): InsertNoteUseCase {
         return InsertNoteUseCase(notesRepository)
     }
+
+    @Provides
+    @Singleton
+    fun provideDeleteNoteUseCase(
+        notesRepository: NotesRepository
+    ): DeleteNoteUseCase {
+        return DeleteNoteUseCase(notesRepository)
+    }
+
+    @Provides
+    @Singleton
+    fun provideClearNotesUseCase(
+        notesRepository: NotesRepository
+    ): ClearNotesUseCase {
+        return ClearNotesUseCase(notesRepository)
+    }
 }
 ```
-// Write here
+
+This module is installed in the `SingletonComponent` to ensure that there is only one instance of each use case throughout the application. This is important to prevent multiple instances of the use cases from being created, which could lead to issues such as inconsistent data. The `provide...UseCase` methods use the `NotesRepository` to create the use case instances. These use cases will be used to handle all the business logic in the application.
 
 ## UI Layer
 ```
