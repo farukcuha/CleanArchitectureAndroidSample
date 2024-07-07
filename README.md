@@ -1,5 +1,5 @@
 
-# Clean Architecture - Kotlin - Android
+# Clean Architecture - Kotlin - Android - Jetpack Compose
 [Project Link](https://github.com/farukcuha/CleanArchitectureAndroidSample)
 
 Clean Architecture is a design pattern that separates the concerns of an application into distinct layers, making the code more modular, testable, and maintainable. This article will explore the implementation of Clean Architecture in an Android application using Kotlin, focusing on the flow from service to screen. 
